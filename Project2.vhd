@@ -4,9 +4,13 @@ use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 entity Ultrassom is
-	port(	A, B: in std_logic_vector(3 downto 0);
+	port(	
 			CLK27M: in std_logic;
-			S: out std_logic_vector(3 downto 0));
+
+			TRIGGER: in std_logic;
+			ECO: out std_logic
+
+			GPIO : out  std_logic_vector (2 downto 0);
 end Ultrassom;
 
 architecture Comportamento of Ultrassom is
@@ -14,11 +18,8 @@ architecture Comportamento of Ultrassom is
 	signal CLKU: std_logic;
 	
 	----------------------------------------------------
-	signal CONT2: std_logic_vector (3 downto 0);
-	
-	signal CLR, UP, LOAD, EN: std_logic;
-	signal D: std_logic_vector(3 downto 0);
-	signal Q: std_logic_vector(3 downto 0);
+	signal atual, prox: std_logic_vector (1 downto 0);
+	signal V: std_logic;
 	--------------------------------------------------
 	begin
 		process(CLK27M)
@@ -30,8 +31,10 @@ architecture Comportamento of Ultrassom is
 	
 		CLKU <= CONT(8);
 		--------------AQUI ACABA O CLK---------------
-		D <= A(3 downto 0);
-		CLR <= B(0);
-		UP <= B(1);
-		LOAD <= B(2);
-		EN <= B(3);
+
+		
+		prox <= '0'&V when atual = "10" else
+				"01" when atual = "00" else
+				atua&ECO;
+
+				
