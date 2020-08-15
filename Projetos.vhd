@@ -119,33 +119,33 @@ begin
 
 		Dis<=EN(7 downto 5); --Posicao do display baseada no contador de 9 bits
 		
-		proxnum <= NUM1 when Dis="001" else 
-					  NUM2 when Dis="010" else
-					  NUM3 when Dis="011" else
-					  NUM4 when Dis="100" else
-					  NUM5 when Dis="101" else
-					  NUM6 when Dis="110" else
-					  NUM7 when Dis="111" else
-					  NUM0;
+		proxnum <=  NUM1 when Dis="001" else 
+					NUM2 when Dis="010" else
+					NUM3 when Dis="011" else
+					NUM4 when Dis="100" else
+					NUM5 when Dis="101" else
+					NUM6 when Dis="110" else
+					NUM7 when Dis="111" else
+					NUM0;
 
 		proxdisplay <= 	"0010" when Dis="001" else 
-								"0011" when Dis="010" else
-								"0100" when Dis="011" else
-								"0101" when Dis="100" else
-								"0110" when Dis="101" else
-								"0111" when Dis="110" else
-								"1000" when Dis="111" else
-								"0001";
+						"0011" when Dis="010" else
+						"0100" when Dis="011" else
+						"0101" when Dis="100" else
+						"0110" when Dis="101" else
+						"0111" when Dis="110" else
+						"1000" when Dis="111" else
+						"0001";
 	
 		proxpalavra<=	"0000110000000001" when (configur = '0' and Dis = "000") else -- modo normal
-							"0000101111111111" when (configur = '0' and Dis = "001") else -- scan todos
-							"0000101000001111" when (configur = '0' and Dis = "010") else -- intensidade
-							"0000100111111111" when (configur = '0' and Dis = "011") else -- BCD
-							--"1111111111111111" when (configur = '0' and Dis = "100") else
-							--"0000001100000111";
-							--"0000001101010101";
-							--"0000"&"0001"&"01010111";
-							"0000"&proxdisplay&"0000"&proxnum;
+						"0000101111111111" when (configur = '0' and Dis = "001") else -- scan todos
+						"0000101000001111" when (configur = '0' and Dis = "010") else -- intensidade
+						"0000100111111111" when (configur = '0' and Dis = "011") else -- BCD
+						--"1111111111111111" when (configur = '0' and Dis = "100") else
+						--"0000001100000111";
+						--"0000001101010101";
+						--"0000"&"0001"&"01010111";
+						"0000"&proxdisplay&"0000"&proxnum;
 						
 		 
 	process(CLK) --Processo que atualiza os valores do componente

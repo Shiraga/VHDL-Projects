@@ -6,16 +6,13 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 entity Ultrassom is
 	port(	
 			CLK27M: in std_logic;
-
-			TRIGGER: in std_logic;
-			ECO: out std_logic
-
+			ECHO: in std_logic;
 			GPIO : out  std_logic_vector (2 downto 0);
 end Ultrassom;
 
-architecture Comportamento of Ultrassom is
+architecture behavior of Ultrassom is
 	signal CONT: std_logic_vector (8 downto 0);
-	signal CLKU: std_logic;
+	signal CLK: std_logic;
 	
 	----------------------------------------------------
 	signal atual, prox: std_logic_vector (1 downto 0);
@@ -29,12 +26,59 @@ architecture Comportamento of Ultrassom is
 				end if;
 			end process;
 	
-		CLKU <= CONT(8);
+		CLK <= CONT(8); --aproximadamente 10us
 		--------------AQUI ACABA O CLK---------------
-
 		
-		prox <= '0'&V when atual = "10" else
-				"01" when atual = "00" else
-				atua&ECO;
+		V <= triggerPulse(CLK, atual);
 
-				
+		prox <= '0'&V	 when atual = "00" else
+				ECHO&'1' when atual = "01" else
+				'1'&ECHO when atual = "11" else
+				"00";
+
+		------------STATE MACHINE SETADA-----------
+
+
+
+end behavior
+
+
+
+
+function triggerPulse (CLK: std_logic;
+						atual: std_logic_vector (1 downto 0))
+						return std_logic is
+variable TRIGGER: std_logic;
+begin
+	if(CLK'event and CLK = '1')
+		TRIGGER <= '1' when atual = '00' else
+					'0';
+	end if;
+	return TRIGGER;
+end;
+
+
+
+
+-- library IEEE;
+-- use IEEE.STD_LOGIC_1164.ALL;
+-- use IEEE.STD_LOGIC_ARITH.ALL;
+-- use IEEE.STD_LOGIC_UNSIGNED.ALL;
+
+-- entity triggerPulse is
+-- 	port(	
+-- 			CLK: in std_logic;
+-- 			TRIGGER: out std_logic;
+-- end triggerPulse;
+
+-- architecture behavior of triggerPulse is
+-- 	process(CLK, atual)
+-- 		begin
+-- 			if(CLK'event and CLK = '1')
+-- 				TRIGGER <= '1' when atual = '00' else
+-- 							'0';
+-- 			end if;
+-- 		end process;
+
+-- 	-------------AQUI ACABA O TRIGGERPULSE-------------
+-- end behavior
