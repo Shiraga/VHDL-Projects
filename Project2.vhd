@@ -4,54 +4,61 @@ use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 entity Ultrassom is
-	port(	
-			CLK27M: in std_logic;
+	Port(	CLK27M: in std_logic;
 			ECHO: in std_logic;
 			BUT0 : in  STD_LOGIC;
-			GPIO : out  std_logic_vector (2 downto 0);
+			GPIO : out  std_logic_vector (2 downto 0));
 end Ultrassom;
 
 architecture behavior of Ultrassom is
-	component contBCD port (CLK: in STD_LOGIC; EN: in  STD_LOGIC; CLR: in STD_LOGIC;
-							RCO: out  STD_LOGIC;
-							Q: out  STD_LOGIC_VECTOR (3 downto 0)); 	end component;
 
-	component FFD port (CLK: in STD_LOGIC; 
-						D: in STD_LOGIC_VECTOR (11 downto 0);
-						Q: out  STD_LOGIC_VECTOR (11 downto 0));		end component;
+component contBCD port (CLK: in STD_LOGIC; EN: in  STD_LOGIC; CLR: in STD_LOGIC;
+								RCO: out  STD_LOGIC;
+								Q: out  STD_LOGIC_VECTOR (3 downto 0));
+end component;
+							
+component FFD port (	CLK: in STD_LOGIC; 
+							D: in STD_LOGIC_VECTOR (11 downto 0);
+							Q: out  STD_LOGIC_VECTOR (11 downto 0));		
+end component;
 
-	component display port (NUM7, NUM6, NUM5, NUM4, NUM3, NUM2, NUM1, NUM0: in std_logic_vector(3 downto 0);
-							CLK: in std_logic;
-							CS, Dout: out std_logic ); 					end component;
+component display port (NUM7, NUM6, NUM5, NUM4, NUM3, NUM2, NUM1, NUM0: in std_logic_vector(3 downto 0);
+								CLK: in std_logic;
+								CS, Dout: out std_logic ); 					
+end component;
 
 
-	signal CONT: std_logic_vector (8 downto 0);
-	signal CLK: std_logic;
-	----------------------------------------------------
-	signal atual, prox: std_logic_vector (1 downto 0);
-	signal trig, clear: std_logic;
-	----------------------------------------------------
-	signal RCO0, RCO1, RCO2:std_logic; --cascateamento dos BCDs
-	signal cont1, cont2, cont3: std_logic_vector (3	downto 0);
-	----------------------------------------------------
-	signal display: std_logic_vector (11 downto 0);
-	signal clkdisp: std_logic;
-	signal cs, din: std_logic;
-	----------------------------------------------------
-	begin
-		process(CLK27M)
-			begin
-				if(CONT = "000000000") then CONT <= “100001101”; --269
-				if(CLK27M' event and CLK27M = '1') then
-					CONT <= CONT - "000000001";
-				end if;
-			end process;
+signal CONT: std_logic_vector (8 downto 0);
+signal CLK: std_logic;
+----------------------------------------------------
+signal atual, prox: std_logic_vector (1 downto 0);
+signal trig, clear: std_logic;
+----------------------------------------------------
+signal RCO0, RCO1, RCO2:std_logic; --cascateamento dos BCDs
+signal cont1, cont2, cont3: std_logic_vector (3	downto 0);
+----------------------------------------------------
+signal display: std_logic_vector (11 downto 0);
+signal clkdisp: std_logic;
+signal cs, din: std_logic;
+----------------------------------------------------
+begin
+	process(CLK27M)
+		begin
+			if(CONT = "000000000") then 
+				CONT <= "100001101"; --269
+			end if;
+			
+			if(CLK27M' event and CLK27M = '1') then
+				CONT <= CONT - "000000001";
+			end if;
+	end process;
 	
-		CLK <= CONT(8); --aproximadamente 10us
-		--------------AQUI ACABA O CLK---------------
+CLK <= CONT(8); --aproximadamente 10us
+--------------AQUI ACABA O CLK---------------
 
-		process(CLK)
-			prox <= "01" when atual = "00" else
+	process(CLK)
+		begin
+		prox <= 	"01" when atual = "00" else
 					ECHO&'1' when atual = "01" else
 					'1'&ECHO when atual = "11" else
 					"00";
@@ -60,40 +67,41 @@ architecture behavior of Ultrassom is
 		trig <= not atual(1) and not atual(0);
 		clear <= not atual(1) and atual(0);
 		-------------SET TRIGGER E CLEAR------------
+	end process;
+	
+	process(ECHO)
+		begin
+			if(ECHO'event and ECHO = '0') then
+				display <= cont3&cont2&cont1; -- 3 contadores BCD em cascata
+			end if;
+	end process;
 
-		process(ECHO)
-			begin
-				if(ECHO'event and ECHO = '0') then
-					display <= cont3&cont2&cont1; -- 3 contadores BCD em cascata
-				end if;
-		end process;
-		----------------MOSTRA DISPLAY----------------
+----------------MOSTRA DISPLAY----------------
 
-	U0: contBCD port map (CLK => CLK, EN => not BUT0, RCO => RCO0, Q => cont1); 
-	U1: contBCD port map (CLK => CLK, EN => RCO0, RCO => RCO1, Q => cont2); 
-	U2: contBCD port map (CLK => CLK, EN => RCO1, RCO => RCO2, Q => cont3);
-	U3: display port map (num7 => display(11 downto 8),
-						  num6 => display(7 downto 4),
-						  num5 => display(3 downto 0),
-						  num4 => "0000",
-						  num3 => "0000",
-						  num2 => "0000",
-						  num1 => "0000",
-						  num0 => "0000",
-						  clk => clkdisp, cs => cs, dout => din ); 
-					   
-	clkdisp <= cont2(5);
-	--clkdisp <= num3(0);
-	GPIO(0) <= clkdisp;
-	GPIO(1) <= cs;
-	GPIO(2) <= din;
-	--LEDS <= num5;
-	LEDS <= '1'&clkdisp&cs&din;
+U0: contBCD port map (CLK => CLK, EN => not BUT0, RCO => RCO0, Q => cont1); 
+U1: contBCD port map (CLK => CLK, EN => RCO0, RCO => RCO1, Q => cont2); 
+U2: contBCD port map (CLK => CLK, EN => RCO1, RCO => RCO2, Q => cont3);
+U3: display port map (	num7 => display(11 downto 8),
+								num6 => display(7 downto 4),
+								num5 => display(3 downto 0),
+								num4 => "0000",
+								num3 => "0000",
+								num2 => "0000",
+								num1 => "0000",
+								num0 => "0000",
+								clk => clkdisp, cs => cs, dout => din ); 
 
+clkdisp <= cont2(5);
+--clkdisp <= num3(0);
+GPIO(0) <= clkdisp;
+GPIO(1) <= cs;
+GPIO(2) <= din;
+--LEDS <= num5;
+LEDS <= '1'&clkdisp&cs&din;
 
-	atual <= proximo;
+atual <= proximo;
 
-end behavior
+end behavior;
 
 ------------------------------------------------------------------------------------------
 -----------------------------CONTADOR BCD COM CLEAR---------------------------------------
@@ -237,5 +245,3 @@ begin
 --	Dout<=palavra(0); --Bus: sinal sendo passado para o display
 	CS <= not EN(4);  --Sinal CS que controla a habilitao da escrita no display
 end comportamento;
-
-
