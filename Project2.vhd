@@ -13,18 +13,18 @@ end Ultrassom;
 architecture behavior of Ultrassom is
 
 component contBCD port (CLK: in STD_LOGIC; EN: in  STD_LOGIC; CLR: in STD_LOGIC;
-								RCO: out  STD_LOGIC;
-								Q: out  STD_LOGIC_VECTOR (3 downto 0));
+						RCO: out  STD_LOGIC;
+						Q: out  STD_LOGIC_VECTOR (3 downto 0));
 end component;
 							
 component FFD port (	CLK: in STD_LOGIC; 
-							D: in STD_LOGIC_VECTOR (11 downto 0);
-							Q: out  STD_LOGIC_VECTOR (11 downto 0));		
+						D: in STD_LOGIC_VECTOR (11 downto 0);
+						Q: out  STD_LOGIC_VECTOR (11 downto 0));		
 end component;
 
 component display port (NUM7, NUM6, NUM5, NUM4, NUM3, NUM2, NUM1, NUM0: in std_logic_vector(3 downto 0);
-								CLK: in std_logic;
-								CS, Dout: out std_logic ); 					
+						CLK: in std_logic;
+						CS, Dout: out std_logic ); 					
 end component;
 
 
@@ -40,6 +40,7 @@ signal cont1, cont2, cont3: std_logic_vector (3	downto 0);
 signal display: std_logic_vector (11 downto 0);
 signal clkdisp: std_logic;
 signal cs, din: std_logic;
+signal LOAD: std_logic;
 ----------------------------------------------------
 begin
 	process(CLK27M)
@@ -62,17 +63,23 @@ CLK <= CONT(8); --aproximadamente 10us
 					ECHO&'1' when atual = "01" else
 					'1'&ECHO when atual = "11" else
 					"00";
-		------------STATE MACHINE SETADA-----------
+------------STATE MACHINE SETADA-----------
 
 		trig <= not atual(1) and not atual(0);
 		clear <= not atual(1) and atual(0);
-		-------------SET TRIGGER E CLEAR------------
+-------------SET TRIGGER E CLEAR------------
+
+		LOAD <= atual(1) and not atual(0); --LOAD = '1' somente se estado atual for "10"
+------------------SET LOAD -----------------
+
 	end process;
 	
 	process(ECHO)
 		begin
 			if(ECHO'event and ECHO = '0') then
-				display <= cont3&cont2&cont1; -- 3 contadores BCD em cascata
+				if(LOAD = '1')
+					display <= cont3&cont2&cont1; -- 3 contadores BCD em cascata
+				end if;
 			end if;
 	end process;
 
@@ -81,7 +88,7 @@ CLK <= CONT(8); --aproximadamente 10us
 U0: contBCD port map (CLK => CLK, EN => not BUT0, RCO => RCO0, Q => cont1); 
 U1: contBCD port map (CLK => CLK, EN => RCO0, RCO => RCO1, Q => cont2); 
 U2: contBCD port map (CLK => CLK, EN => RCO1, RCO => RCO2, Q => cont3);
-U3: display port map (	num7 => display(11 downto 8),
+D3: display port map (	num7 => display(11 downto 8),
 								num6 => display(7 downto 4),
 								num5 => display(3 downto 0),
 								num4 => "0000",
@@ -90,6 +97,7 @@ U3: display port map (	num7 => display(11 downto 8),
 								num1 => "0000",
 								num0 => "0000",
 								clk => clkdisp, cs => cs, dout => din ); 
+F4: FFD port map (CLK => CLK, D => display(11 downto 0));
 
 clkdisp <= cont2(5);
 --clkdisp <= num3(0);
